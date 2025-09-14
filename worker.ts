@@ -19,68 +19,66 @@ async function compressImageInWorker(
     fileType: string,
     settings: any
 ): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
+    try {
+        // 使用 fetch 获取图片数据
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
 
-        img.onload = async () => {
-            try {
-                // 创建canvas
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    throw new Error('无法创建canvas上下文');
-                }
+        // 使用 createImageBitmap 创建图片（Worker 兼容）
+        const imageBitmap = await createImageBitmap(blob);
 
-                // 计算缩放后的尺寸
-                let { width, height } = calculateDimensions(
-                    img.naturalWidth,
-                    img.naturalHeight,
-                    settings.maxWidth,
-                    settings.maxHeight
-                );
+        // 创建 OffscreenCanvas（Worker 兼容）
+        const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('无法创建canvas上下文');
+        }
 
-                // 设置canvas尺寸
-                canvas.width = width;
-                canvas.height = height;
+        // 计算缩放后的尺寸
+        let { width, height } = calculateDimensions(
+            imageBitmap.width,
+            imageBitmap.height,
+            settings.maxWidth,
+            settings.maxHeight
+        );
 
-                // 处理图片旋转（EXIF纠正）
-                const orientation = await getImageOrientation(imageUrl);
-                applyOrientation(ctx, orientation, width, height);
+        // 重新设置canvas尺寸
+        canvas.width = width;
+        canvas.height = height;
 
-                // 绘制图片
-                ctx.drawImage(img, 0, 0, width, height);
+        // 处理图片旋转（EXIF纠正）
+        const orientation = await getImageOrientation(imageUrl);
+        applyOrientation(ctx, orientation, width, height);
 
-                // 确定输出格式
-                const outputFormat = getOutputFormat(fileType, settings.outputFormat);
-                const mimeType = getMimeType(outputFormat);
+        // 绘制图片
+        ctx.drawImage(imageBitmap, 0, 0, width, height);
 
-                // 压缩图片
-                const compressedDataUrl = canvas.toDataURL(mimeType, settings.quality);
+        // 确定输出格式
+        const outputFormat = getOutputFormat(fileType, settings.outputFormat);
+        const mimeType = getMimeType(outputFormat);
 
-                // 转换为blob
-                const blob = dataURLToBlob(compressedDataUrl);
+        // 压缩图片 - 使用 OffscreenCanvas.convertToBlob
+        const compressedBlob = await canvas.convertToBlob({
+            type: mimeType,
+            quality: settings.quality
+        });
 
-                // 创建URL
-                const url = URL.createObjectURL(blob);
+        // 创建URL
+        const url = URL.createObjectURL(compressedBlob);
 
-                resolve({
-                    url,
-                    size: blob.size,
-                    dimensions: { width, height },
-                    format: outputFormat
-                });
+        // 清理 ImageBitmap
+        imageBitmap.close();
 
-            } catch (error) {
-                reject(error);
-            }
+        return {
+            url,
+            size: compressedBlob.size,
+            dimensions: { width, height },
+            format: outputFormat
         };
 
-        img.onerror = () => {
-            reject(new Error('无法加载图片'));
-        };
-
-        img.src = imageUrl;
-    });
+    } catch (error) {
+        throw error;
+    }
 }
 
 // 计算缩放尺寸
@@ -228,7 +226,7 @@ function findOrientationInExif(exifData: DataView): number | null {
 
 // 应用图片方向
 function applyOrientation(
-    ctx: CanvasRenderingContext2D,
+    ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D,
     orientation: number,
     width: number,
     height: number
@@ -284,18 +282,4 @@ function getMimeType(format: string): string {
     return mimeTypes[format] || 'image/jpeg';
 }
 
-// DataURL转Blob
-function dataURLToBlob(dataURL: string): Blob {
-    const parts = dataURL.split(',');
-    const byteString = atob(parts[1]);
-    const mimeString = parts[0].split(':')[1].split(';')[0];
-
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-
-    return new Blob([ab], { type: mimeString });
-}
+// 注意：不再需要 dataURLToBlob 函数，因为我们直接使用 OffscreenCanvas.convertToBlob()

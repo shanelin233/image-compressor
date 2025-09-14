@@ -30,9 +30,14 @@ let currentSettings: CompressionSettings = {
 
 // DOM元素
 const elements = {
+    stepsIndicator: document.getElementById('stepsIndicator') as HTMLDivElement,
     uploadArea: document.getElementById('uploadArea') as HTMLDivElement,
     fileInput: document.getElementById('fileInput') as HTMLInputElement,
     selectFilesBtn: document.getElementById('selectFilesBtn') as HTMLButtonElement,
+    filePreviewSection: document.getElementById('filePreviewSection') as HTMLElement,
+    filePreviewGrid: document.getElementById('filePreviewGrid') as HTMLDivElement,
+    addMoreFilesBtn: document.getElementById('addMoreFilesBtn') as HTMLButtonElement,
+    proceedToSettingsBtn: document.getElementById('proceedToSettingsBtn') as HTMLButtonElement,
     settingsSection: document.getElementById('settingsSection') as HTMLElement,
     qualitySlider: document.getElementById('qualitySlider') as HTMLInputElement,
     qualityValue: document.getElementById('qualityValue') as HTMLSpanElement,
@@ -85,6 +90,10 @@ function setupEventListeners() {
     elements.maxWidth.addEventListener('change', updateSettings);
     elements.maxHeight.addEventListener('change', updateSettings);
     elements.outputFormat.addEventListener('change', updateSettings);
+
+    // 新的按钮事件
+    elements.addMoreFilesBtn.addEventListener('click', () => elements.fileInput.click());
+    elements.proceedToSettingsBtn.addEventListener('click', proceedToSettings);
 
     // 操作按钮
     elements.compressBtn.addEventListener('click', startCompression);
@@ -153,7 +162,8 @@ async function processFiles(files: File[]) {
     }
 
     if (imageFiles.length > 0) {
-        showSettings();
+        showFilePreview();
+        updateStepIndicator(1);
     }
 }
 
@@ -194,6 +204,89 @@ function getImageDimensions(url: string): Promise<{ width: number; height: numbe
         };
         img.src = url;
     });
+}
+
+// 显示文件预览
+function showFilePreview() {
+    elements.stepsIndicator.style.display = 'flex';
+    elements.filePreviewSection.style.display = 'block';
+    renderFilePreview();
+}
+
+// 渲染文件预览
+function renderFilePreview() {
+    elements.filePreviewGrid.innerHTML = '';
+
+    imageFiles.forEach(imageFile => {
+        const previewItem = createFilePreviewItem(imageFile);
+        elements.filePreviewGrid.appendChild(previewItem);
+    });
+}
+
+// 创建文件预览项
+function createFilePreviewItem(imageFile: ImageFile): HTMLDivElement {
+    const item = document.createElement('div');
+    item.className = 'file-preview-item';
+    item.innerHTML = `
+        <button class="file-preview-remove" onclick="removeImageFile('${imageFile.id}')">&times;</button>
+        <div class="file-preview-image">
+            <img src="${imageFile.originalUrl}" alt="${imageFile.file.name}">
+        </div>
+        <div class="file-preview-info">
+            <div class="file-preview-name" title="${imageFile.file.name}">${imageFile.file.name}</div>
+            <div class="file-preview-details">
+                <span>大小: ${formatFileSize(imageFile.originalSize)}</span>
+                <span>尺寸: ${imageFile.originalDimensions.width} × ${imageFile.originalDimensions.height}</span>
+            </div>
+        </div>
+    `;
+    return item;
+}
+
+// 进入设置步骤
+function proceedToSettings() {
+    updateStepIndicator(2);
+    elements.settingsSection.style.display = 'block';
+    elements.imagesSection.style.display = 'block';
+    renderImagesGrid();
+
+    // 滚动到设置区域
+    elements.settingsSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// 更新步骤指示器
+function updateStepIndicator(currentStep: number) {
+    const steps = document.querySelectorAll('.step');
+
+    steps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        step.classList.remove('active', 'completed');
+
+        if (stepNumber < currentStep) {
+            step.classList.add('completed');
+        } else if (stepNumber === currentStep) {
+            step.classList.add('active');
+        }
+    });
+}
+
+// 移除图片文件
+function removeImageFile(imageId: string) {
+    const index = imageFiles.findIndex(img => img.id === imageId);
+    if (index > -1) {
+        URL.revokeObjectURL(imageFiles[index].originalUrl);
+        if (imageFiles[index].compressedUrl) {
+            URL.revokeObjectURL(imageFiles[index].compressedUrl);
+        }
+        imageFiles.splice(index, 1);
+        renderFilePreview();
+
+        if (imageFiles.length === 0) {
+            elements.filePreviewSection.style.display = 'none';
+            elements.stepsIndicator.style.display = 'none';
+            updateStepIndicator(1);
+        }
+    }
 }
 
 // 显示设置面板
@@ -286,6 +379,7 @@ async function startCompression() {
         return;
     }
 
+    updateStepIndicator(3);
     showProgress();
 
     for (let i = 0; i < imageFiles.length; i++) {
@@ -296,6 +390,9 @@ async function startCompression() {
             imageFile.status = 'processing';
             renderImagesGrid();
 
+            // 显示当前处理的文件
+            showCurrentProcessingFile(imageFile);
+
             const compressedData = await compressImageWithWorker(imageFile, currentSettings);
 
             imageFile.compressedUrl = compressedData.url;
@@ -303,16 +400,31 @@ async function startCompression() {
             imageFile.compressedDimensions = compressedData.dimensions;
             imageFile.status = 'completed';
 
+            // 显示压缩结果统计
+            showCompressionStats(imageFile);
+
         } catch (error) {
             imageFile.status = 'error';
-            imageFile.error = error instanceof Error ? error.message : '压缩失败';
+            const errorMessage = error instanceof Error ? error.message : '压缩失败';
+            imageFile.error = errorMessage;
+            console.error(`压缩 ${imageFile.file.name} 时出错:`, error);
+
+            // 显示具体的错误信息
+            const errorDetails = getErrorSolution(errorMessage);
+            if (errorDetails) {
+                console.warn(`建议解决方案: ${errorDetails}`);
+            }
         }
 
         renderImagesGrid();
+
+        // 添加小延迟，让用户能看到进度变化
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     hideProgress();
-    showSuccess('压缩完成！');
+    updateStepIndicator(4);
+    showSuccess('压缩完成！可以下载您的图片了');
 }
 
 // 调用Web Worker压缩图片
@@ -351,15 +463,59 @@ function showProgress() {
 }
 
 function updateProgress(current: number, total: number, text: string) {
-    const percentage = (current / total) * 100;
+    const percentage = ((current + 1) / total) * 100;
     elements.progressFill.style.width = percentage + '%';
-    elements.progressText.textContent = `${text} (${current + 1}/${total})`;
+    elements.progressText.textContent = `${text} (${current + 1}/${total}) - ${Math.round(percentage)}%`;
 }
 
 function hideProgress() {
     setTimeout(() => {
         elements.progressSection.style.display = 'none';
     }, 1000);
+}
+
+// 显示当前处理的文件
+function showCurrentProcessingFile(imageFile: ImageFile) {
+    const processingInfo = document.createElement('div');
+    processingInfo.className = 'processing-info';
+    processingInfo.innerHTML = `
+        <div class="processing-file">
+            <div class="processing-thumbnail">
+                <img src="${imageFile.originalUrl}" alt="${imageFile.file.name}">
+            </div>
+            <div class="processing-details">
+                <div class="processing-filename">${imageFile.file.name}</div>
+                <div class="processing-size">${formatFileSize(imageFile.originalSize)}</div>
+                <div class="processing-dimensions">${imageFile.originalDimensions.width} × ${imageFile.originalDimensions.height}</div>
+            </div>
+            <div class="processing-spinner"></div>
+        </div>
+    `;
+
+    // 替换或添加到进度区域
+    const existingInfo = elements.progressSection.querySelector('.processing-info');
+    if (existingInfo) {
+        existingInfo.replaceWith(processingInfo);
+    } else {
+        elements.progressSection.appendChild(processingInfo);
+    }
+}
+
+// 显示压缩统计
+function showCompressionStats(imageFile: ImageFile) {
+    if (!imageFile.compressedSize) return;
+
+    const compressionRatio = parseFloat(calculateCompressionRatio(imageFile.originalSize, imageFile.compressedSize));
+    const savedBytes = imageFile.originalSize - imageFile.compressedSize;
+
+    // 创建简短的统计提示
+    const statsText = `${imageFile.file.name}: 压缩了 ${compressionRatio.toFixed(1)}%，节省 ${formatFileSize(savedBytes)}`;
+
+    // 可以在控制台显示详细信息
+    console.log(`✅ ${statsText}`);
+
+    // 在进度文本中显示最新完成的文件信息
+    elements.progressText.textContent += ` | 节省: ${formatFileSize(savedBytes)}`;
 }
 
 // 下载功能
@@ -514,30 +670,82 @@ function getDownloadFileName(originalName: string, outputFormat: string): string
     return `${nameWithoutExt}_compressed_${timestamp}.${outputFormat}`;
 }
 
-// 错误处理
-function showError(message: string) {
-    elements.errorToast.textContent = message;
+// 改进的错误处理
+function showError(message: string, details?: string) {
+    const errorContent = document.createElement('div');
+    errorContent.innerHTML = `
+        <div class="error-main">${message}</div>
+        ${details ? `<div class="error-details">${details}</div>` : ''}
+        <button class="error-close" onclick="hideError()">&times;</button>
+    `;
+
+    elements.errorToast.innerHTML = '';
+    elements.errorToast.appendChild(errorContent);
     elements.errorToast.classList.add('show');
 
+    // 自动隐藏错误提示
     setTimeout(() => {
         elements.errorToast.classList.remove('show');
-    }, 5000);
+    }, 8000);
 }
 
-function showSuccess(message: string) {
-    elements.errorToast.textContent = message;
+// 隐藏错误提示
+function hideError() {
+    elements.errorToast.classList.remove('show');
+}
+
+// 改进的成功提示
+function showSuccess(message: string, details?: string) {
+    const successContent = document.createElement('div');
+    successContent.innerHTML = `
+        <div class="success-main">${message}</div>
+        ${details ? `<div class="success-details">${details}</div>` : ''}
+        <button class="success-close" onclick="hideSuccess()">&times;</button>
+    `;
+
+    elements.errorToast.innerHTML = '';
+    elements.errorToast.appendChild(successContent);
     elements.errorToast.style.backgroundColor = 'var(--success-color)';
     elements.errorToast.classList.add('show');
 
     setTimeout(() => {
         elements.errorToast.classList.remove('show');
         elements.errorToast.style.backgroundColor = '';
-    }, 3000);
+    }, 5000);
 }
+
+// 隐藏成功提示
+function hideSuccess() {
+    elements.errorToast.classList.remove('show');
+    elements.errorToast.style.backgroundColor = '';
+}
+
+// 获取错误解决方案
+function getErrorSolution(errorMessage: string): string | null {
+    const errorSolutions: { [key: string]: string } = {
+        '无法加载图片': '请检查图片文件是否完整，或尝试其他格式的图片',
+        '无法创建canvas上下文': '您的浏览器可能不支持此功能，请更新浏览器或使用最新版本的Chrome/Firefox',
+        '压缩失败': '图片可能已损坏或格式不支持，请尝试其他图片',
+        'Failed to fetch': '网络连接问题，请检查网络连接',
+        'Out of memory': '图片太大，请尝试较小的图片或降低最大尺寸设置'
+    };
+
+    for (const [key, solution] of Object.entries(errorSolutions)) {
+        if (errorMessage.includes(key)) {
+            return solution;
+        }
+    }
+
+    return null;
+}
+
 
 // 全局函数供HTML调用
 (window as any).previewImage = previewImage;
 (window as any).downloadImage = downloadImage;
+(window as any).removeImageFile = removeImageFile;
+(window as any).hideError = hideError;
+(window as any).hideSuccess = hideSuccess;
 
 // 初始化应用
 init();

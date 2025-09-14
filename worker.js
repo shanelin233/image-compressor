@@ -13,42 +13,39 @@ self.onmessage = async (e) => {
     }
 };
 async function compressImageInWorker(imageUrl, fileName, fileType, settings) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = async () => {
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    throw new Error('无法创建canvas上下文');
-                }
-                let { width, height } = calculateDimensions(img.naturalWidth, img.naturalHeight, settings.maxWidth, settings.maxHeight);
-                canvas.width = width;
-                canvas.height = height;
-                const orientation = await getImageOrientation(imageUrl);
-                applyOrientation(ctx, orientation, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-                const outputFormat = getOutputFormat(fileType, settings.outputFormat);
-                const mimeType = getMimeType(outputFormat);
-                const compressedDataUrl = canvas.toDataURL(mimeType, settings.quality);
-                const blob = dataURLToBlob(compressedDataUrl);
-                const url = URL.createObjectURL(blob);
-                resolve({
-                    url,
-                    size: blob.size,
-                    dimensions: { width, height },
-                    format: outputFormat
-                });
-            }
-            catch (error) {
-                reject(error);
-            }
+    try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const imageBitmap = await createImageBitmap(blob);
+        const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('无法创建canvas上下文');
+        }
+        let { width, height } = calculateDimensions(imageBitmap.width, imageBitmap.height, settings.maxWidth, settings.maxHeight);
+        canvas.width = width;
+        canvas.height = height;
+        const orientation = await getImageOrientation(imageUrl);
+        applyOrientation(ctx, orientation, width, height);
+        ctx.drawImage(imageBitmap, 0, 0, width, height);
+        const outputFormat = getOutputFormat(fileType, settings.outputFormat);
+        const mimeType = getMimeType(outputFormat);
+        const compressedBlob = await canvas.convertToBlob({
+            type: mimeType,
+            quality: settings.quality
+        });
+        const url = URL.createObjectURL(compressedBlob);
+        imageBitmap.close();
+        return {
+            url,
+            size: compressedBlob.size,
+            dimensions: { width, height },
+            format: outputFormat
         };
-        img.onerror = () => {
-            reject(new Error('无法加载图片'));
-        };
-        img.src = imageUrl;
-    });
+    }
+    catch (error) {
+        throw error;
+    }
 }
 function calculateDimensions(originalWidth, originalHeight, maxWidth, maxHeight) {
     let width = originalWidth;
@@ -198,15 +195,4 @@ function getMimeType(format) {
         'avif': 'image/avif'
     };
     return mimeTypes[format] || 'image/jpeg';
-}
-function dataURLToBlob(dataURL) {
-    const parts = dataURL.split(',');
-    const byteString = atob(parts[1]);
-    const mimeString = parts[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
 }

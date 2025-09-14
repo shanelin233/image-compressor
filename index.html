@@ -13,6 +13,29 @@
             <p class="subtitle">纯前端处理，无需上传，支持JPEG/PNG/WebP/AVIF格式</p>
         </header>
 
+        <!-- 步骤指示器 -->
+        <div class="steps-indicator" id="stepsIndicator" style="display: none;">
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-title">选择文件</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-title">设置参数</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-title">压缩处理</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-title">下载结果</div>
+            </div>
+        </div>
+
         <main>
             <!-- 上传区域 -->
             <section class="upload-section">
@@ -28,6 +51,18 @@
                         <button class="btn btn-primary" id="selectFilesBtn">选择文件</button>
                     </div>
                 </div>
+            </section>
+
+            <!-- 文件预览区域 -->
+            <section class="file-preview-section" id="filePreviewSection" style="display: none;">
+                <div class="section-header">
+                    <h2>已选择的文件</h2>
+                    <div class="file-actions">
+                        <button class="btn btn-outline" id="addMoreFilesBtn">添加更多文件</button>
+                        <button class="btn btn-primary" id="proceedToSettingsBtn">下一步：设置参数</button>
+                    </div>
+                </div>
+                <div class="file-preview-grid" id="filePreviewGrid"></div>
             </section>
 
             <!-- 设置面板 -->

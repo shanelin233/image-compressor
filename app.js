@@ -7,9 +7,14 @@ let currentSettings = {
     outputFormat: 'original'
 };
 const elements = {
+    stepsIndicator: document.getElementById('stepsIndicator'),
     uploadArea: document.getElementById('uploadArea'),
     fileInput: document.getElementById('fileInput'),
     selectFilesBtn: document.getElementById('selectFilesBtn'),
+    filePreviewSection: document.getElementById('filePreviewSection'),
+    filePreviewGrid: document.getElementById('filePreviewGrid'),
+    addMoreFilesBtn: document.getElementById('addMoreFilesBtn'),
+    proceedToSettingsBtn: document.getElementById('proceedToSettingsBtn'),
     settingsSection: document.getElementById('settingsSection'),
     qualitySlider: document.getElementById('qualitySlider'),
     qualityValue: document.getElementById('qualityValue'),
@@ -53,6 +58,8 @@ function setupEventListeners() {
     elements.maxWidth.addEventListener('change', updateSettings);
     elements.maxHeight.addEventListener('change', updateSettings);
     elements.outputFormat.addEventListener('change', updateSettings);
+    elements.addMoreFilesBtn.addEventListener('click', () => elements.fileInput.click());
+    elements.proceedToSettingsBtn.addEventListener('click', proceedToSettings);
     elements.compressBtn.addEventListener('click', startCompression);
     elements.clearAllBtn.addEventListener('click', clearAllImages);
     elements.downloadAllBtn.addEventListener('click', downloadAllImages);
@@ -104,7 +111,8 @@ async function processFiles(files) {
         await addImageFile(file);
     }
     if (imageFiles.length > 0) {
-        showSettings();
+        showFilePreview();
+        updateStepIndicator(1);
     }
 }
 async function addImageFile(file) {
@@ -137,6 +145,72 @@ function getImageDimensions(url) {
         };
         img.src = url;
     });
+}
+function showFilePreview() {
+    elements.stepsIndicator.style.display = 'flex';
+    elements.filePreviewSection.style.display = 'block';
+    renderFilePreview();
+}
+function renderFilePreview() {
+    elements.filePreviewGrid.innerHTML = '';
+    imageFiles.forEach(imageFile => {
+        const previewItem = createFilePreviewItem(imageFile);
+        elements.filePreviewGrid.appendChild(previewItem);
+    });
+}
+function createFilePreviewItem(imageFile) {
+    const item = document.createElement('div');
+    item.className = 'file-preview-item';
+    item.innerHTML = `
+        <button class="file-preview-remove" onclick="removeImageFile('${imageFile.id}')">&times;</button>
+        <div class="file-preview-image">
+            <img src="${imageFile.originalUrl}" alt="${imageFile.file.name}">
+        </div>
+        <div class="file-preview-info">
+            <div class="file-preview-name" title="${imageFile.file.name}">${imageFile.file.name}</div>
+            <div class="file-preview-details">
+                <span>大小: ${formatFileSize(imageFile.originalSize)}</span>
+                <span>尺寸: ${imageFile.originalDimensions.width} × ${imageFile.originalDimensions.height}</span>
+            </div>
+        </div>
+    `;
+    return item;
+}
+function proceedToSettings() {
+    updateStepIndicator(2);
+    elements.settingsSection.style.display = 'block';
+    elements.imagesSection.style.display = 'block';
+    renderImagesGrid();
+    elements.settingsSection.scrollIntoView({ behavior: 'smooth' });
+}
+function updateStepIndicator(currentStep) {
+    const steps = document.querySelectorAll('.step');
+    steps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        step.classList.remove('active', 'completed');
+        if (stepNumber < currentStep) {
+            step.classList.add('completed');
+        }
+        else if (stepNumber === currentStep) {
+            step.classList.add('active');
+        }
+    });
+}
+function removeImageFile(imageId) {
+    const index = imageFiles.findIndex(img => img.id === imageId);
+    if (index > -1) {
+        URL.revokeObjectURL(imageFiles[index].originalUrl);
+        if (imageFiles[index].compressedUrl) {
+            URL.revokeObjectURL(imageFiles[index].compressedUrl);
+        }
+        imageFiles.splice(index, 1);
+        renderFilePreview();
+        if (imageFiles.length === 0) {
+            elements.filePreviewSection.style.display = 'none';
+            elements.stepsIndicator.style.display = 'none';
+            updateStepIndicator(1);
+        }
+    }
 }
 function showSettings() {
     elements.settingsSection.style.display = 'block';
@@ -214,6 +288,7 @@ async function startCompression() {
         showError('请先选择图片文件');
         return;
     }
+    updateStepIndicator(3);
     showProgress();
     for (let i = 0; i < imageFiles.length; i++) {
         const imageFile = imageFiles[i];
@@ -221,20 +296,30 @@ async function startCompression() {
         try {
             imageFile.status = 'processing';
             renderImagesGrid();
+            showCurrentProcessingFile(imageFile);
             const compressedData = await compressImageWithWorker(imageFile, currentSettings);
             imageFile.compressedUrl = compressedData.url;
             imageFile.compressedSize = compressedData.size;
             imageFile.compressedDimensions = compressedData.dimensions;
             imageFile.status = 'completed';
+            showCompressionStats(imageFile);
         }
         catch (error) {
             imageFile.status = 'error';
-            imageFile.error = error instanceof Error ? error.message : '压缩失败';
+            const errorMessage = error instanceof Error ? error.message : '压缩失败';
+            imageFile.error = errorMessage;
+            console.error(`压缩 ${imageFile.file.name} 时出错:`, error);
+            const errorDetails = getErrorSolution(errorMessage);
+            if (errorDetails) {
+                console.warn(`建议解决方案: ${errorDetails}`);
+            }
         }
         renderImagesGrid();
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
     hideProgress();
-    showSuccess('压缩完成！');
+    updateStepIndicator(4);
+    showSuccess('压缩完成！可以下载您的图片了');
 }
 async function compressImageWithWorker(imageFile, settings) {
     return new Promise((resolve, reject) => {
@@ -266,14 +351,47 @@ function showProgress() {
     elements.progressText.textContent = '准备压缩...';
 }
 function updateProgress(current, total, text) {
-    const percentage = (current / total) * 100;
+    const percentage = ((current + 1) / total) * 100;
     elements.progressFill.style.width = percentage + '%';
-    elements.progressText.textContent = `${text} (${current + 1}/${total})`;
+    elements.progressText.textContent = `${text} (${current + 1}/${total}) - ${Math.round(percentage)}%`;
 }
 function hideProgress() {
     setTimeout(() => {
         elements.progressSection.style.display = 'none';
     }, 1000);
+}
+function showCurrentProcessingFile(imageFile) {
+    const processingInfo = document.createElement('div');
+    processingInfo.className = 'processing-info';
+    processingInfo.innerHTML = `
+        <div class="processing-file">
+            <div class="processing-thumbnail">
+                <img src="${imageFile.originalUrl}" alt="${imageFile.file.name}">
+            </div>
+            <div class="processing-details">
+                <div class="processing-filename">${imageFile.file.name}</div>
+                <div class="processing-size">${formatFileSize(imageFile.originalSize)}</div>
+                <div class="processing-dimensions">${imageFile.originalDimensions.width} × ${imageFile.originalDimensions.height}</div>
+            </div>
+            <div class="processing-spinner"></div>
+        </div>
+    `;
+    const existingInfo = elements.progressSection.querySelector('.processing-info');
+    if (existingInfo) {
+        existingInfo.replaceWith(processingInfo);
+    }
+    else {
+        elements.progressSection.appendChild(processingInfo);
+    }
+}
+function showCompressionStats(imageFile) {
+    if (!imageFile.compressedSize)
+        return;
+    const compressionRatio = parseFloat(calculateCompressionRatio(imageFile.originalSize, imageFile.compressedSize));
+    const savedBytes = imageFile.originalSize - imageFile.compressedSize;
+    const statsText = `${imageFile.file.name}: 压缩了 ${compressionRatio.toFixed(1)}%，节省 ${formatFileSize(savedBytes)}`;
+    console.log(`✅ ${statsText}`);
+    elements.progressText.textContent += ` | 节省: ${formatFileSize(savedBytes)}`;
 }
 async function downloadImage(imageId) {
     const imageFile = imageFiles.find(img => img.id === imageId);
@@ -396,22 +514,61 @@ function getDownloadFileName(originalName, outputFormat) {
     }
     return `${nameWithoutExt}_compressed_${timestamp}.${outputFormat}`;
 }
-function showError(message) {
-    elements.errorToast.textContent = message;
+function showError(message, details) {
+    const errorContent = document.createElement('div');
+    errorContent.innerHTML = `
+        <div class="error-main">${message}</div>
+        ${details ? `<div class="error-details">${details}</div>` : ''}
+        <button class="error-close" onclick="hideError()">&times;</button>
+    `;
+    elements.errorToast.innerHTML = '';
+    elements.errorToast.appendChild(errorContent);
     elements.errorToast.classList.add('show');
     setTimeout(() => {
         elements.errorToast.classList.remove('show');
-    }, 5000);
+    }, 8000);
 }
-function showSuccess(message) {
-    elements.errorToast.textContent = message;
+function hideError() {
+    elements.errorToast.classList.remove('show');
+}
+function showSuccess(message, details) {
+    const successContent = document.createElement('div');
+    successContent.innerHTML = `
+        <div class="success-main">${message}</div>
+        ${details ? `<div class="success-details">${details}</div>` : ''}
+        <button class="success-close" onclick="hideSuccess()">&times;</button>
+    `;
+    elements.errorToast.innerHTML = '';
+    elements.errorToast.appendChild(successContent);
     elements.errorToast.style.backgroundColor = 'var(--success-color)';
     elements.errorToast.classList.add('show');
     setTimeout(() => {
         elements.errorToast.classList.remove('show');
         elements.errorToast.style.backgroundColor = '';
-    }, 3000);
+    }, 5000);
+}
+function hideSuccess() {
+    elements.errorToast.classList.remove('show');
+    elements.errorToast.style.backgroundColor = '';
+}
+function getErrorSolution(errorMessage) {
+    const errorSolutions = {
+        '无法加载图片': '请检查图片文件是否完整，或尝试其他格式的图片',
+        '无法创建canvas上下文': '您的浏览器可能不支持此功能，请更新浏览器或使用最新版本的Chrome/Firefox',
+        '压缩失败': '图片可能已损坏或格式不支持，请尝试其他图片',
+        'Failed to fetch': '网络连接问题，请检查网络连接',
+        'Out of memory': '图片太大，请尝试较小的图片或降低最大尺寸设置'
+    };
+    for (const [key, solution] of Object.entries(errorSolutions)) {
+        if (errorMessage.includes(key)) {
+            return solution;
+        }
+    }
+    return null;
 }
 window.previewImage = previewImage;
 window.downloadImage = downloadImage;
+window.removeImageFile = removeImageFile;
+window.hideError = hideError;
+window.hideSuccess = hideSuccess;
 init();

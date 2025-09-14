@@ -65,7 +65,7 @@ body {
 /* 头部 */
 header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 
 header h1 {
@@ -81,6 +81,181 @@ header h1 {
 .subtitle {
     color: var(--text-secondary);
     font-size: var(--font-size-base);
+}
+
+/* 步骤指示器 */
+.steps-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2rem 0 3rem 0;
+    padding: 0 2rem;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.step.active {
+    opacity: 1;
+}
+
+.step.completed {
+    opacity: 1;
+}
+
+.step-number {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background-color: var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.step.completed .step-number {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.step-title {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-align: center;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+.step.active .step-title {
+    color: var(--text-primary);
+}
+
+.step-line {
+    width: 4rem;
+    height: 2px;
+    background-color: var(--border);
+    margin: 0 1rem;
+    position: relative;
+    top: -1.25rem;
+}
+
+.step.completed + .step-line {
+    background-color: var(--success-color);
+}
+
+/* 文件预览区域 */
+.file-preview-section {
+    background-color: var(--surface-elevated);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.file-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.file-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.file-preview-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background-color: var(--background);
+    transition: all 0.2s ease;
+}
+
+.file-preview-item:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.file-preview-image {
+    width: 100%;
+    height: 120px;
+    background-color: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.file-preview-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.file-preview-info {
+    padding: 1rem;
+}
+
+.file-preview-name {
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-preview-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.file-preview-remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.file-preview-remove:hover {
+    background-color: #dc2626;
+    transform: scale(1.1);
+}
+
+.file-preview-item {
+    position: relative;
 }
 
 /* 上传区域 */
@@ -273,6 +448,82 @@ header h1 {
     text-align: center;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
+    margin-bottom: 1rem;
+}
+
+/* 处理过程信息 */
+.processing-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.processing-file {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.processing-thumbnail {
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.processing-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.processing-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.processing-filename {
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.processing-size,
+.processing-dimensions {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.processing-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    flex-shrink: 0;
+}
+
+/* 改进加载动画 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.processing-spinner {
+    animation: spin 0.8s linear infinite;
+}
+
+/* 成功状态样式增强 */
+.success {
+    color: var(--success-color);
+    font-weight: 500;
 }
 
 /* 图片列表 */
@@ -380,7 +631,7 @@ header h1 {
     font-size: var(--font-size-sm);
 }
 
-/* 错误提示 */
+/* 改进的提示样式 */
 .error-toast {
     position: fixed;
     top: 2rem;
@@ -393,11 +644,55 @@ header h1 {
     transform: translateX(400px);
     transition: transform 0.3s ease;
     z-index: 1000;
-    max-width: 300px;
+    max-width: 350px;
+    min-width: 300px;
 }
 
 .error-toast.show {
     transform: translateX(0);
+}
+
+.error-main,
+.success-main {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    margin-bottom: 0.5rem;
+}
+
+.error-details,
+.success-details {
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+.error-close,
+.success-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.error-close:hover,
+.success-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 成功状态的特殊样式 */
+.error-toast[style*="--success-color"] {
+    background-color: var(--success-color) !important;
 }
 
 /* 模态框 */
