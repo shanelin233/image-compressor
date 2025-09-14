@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)",
+      "Bash(git clone:*)",
+      "Bash(npm run build)",
+      "Bash(npm run)",
+      "Read(//d/AIcoding/**)",
+      "Read(//c/Users/Rong/.claude/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

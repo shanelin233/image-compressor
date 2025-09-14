@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片压缩工具 - Image Compressor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片压缩工具</h1>
+            <p class="subtitle">纯前端处理，无需上传，支持JPEG/PNG/WebP/AVIF格式</p>
+        </header>
+
+        <main>
+            <!-- 上传区域 -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="upload-text">拖拽图片到此处或点击选择文件</p>
+                        <p class="upload-hint">支持多文件同时上传，最大支持50MB</p>
+                        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+                        <button class="btn btn-primary" id="selectFilesBtn">选择文件</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 设置面板 -->
+            <section class="settings-section" id="settingsSection" style="display: none;">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="qualitySlider">压缩质量</label>
+                        <div class="slider-container">
+                            <input type="range" id="qualitySlider" min="0.1" max="1" step="0.1" value="0.8">
+                            <span id="qualityValue">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="maxWidth">最大宽度 (px)</label>
+                        <input type="number" id="maxWidth" min="100" max="8000" value="2000" step="100">
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="maxHeight">最大高度 (px)</label>
+                        <input type="number" id="maxHeight" min="100" max="8000" value="2000" step="100">
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="outputFormat">输出格式</label>
+                        <select id="outputFormat">
+                            <option value="original">保持原格式</option>
+                            <option value="jpeg">JPEG</option>
+                            <option value="png">PNG</option>
+                            <option value="webp">WebP</option>
+                            <option value="avif">AVIF</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="compressBtn">开始压缩</button>
+                    <button class="btn btn-outline" id="clearAllBtn">清空全部</button>
+                </div>
+            </section>
+
+            <!-- 进度条 -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">准备压缩...</p>
+            </section>
+
+            <!-- 图片列表 -->
+            <section class="images-section" id="imagesSection" style="display: none;">
+                <div class="section-header">
+                    <h2>压缩结果</h2>
+                    <div class="batch-actions">
+                        <button class="btn btn-outline" id="downloadAllBtn">下载全部</button>
+                        <button class="btn btn-primary" id="downloadZipBtn">打包下载 (ZIP)</button>
+                    </div>
+                </div>
+                <div class="images-grid" id="imagesGrid"></div>
+            </section>
+        </main>
+
+        <!-- 错误提示 -->
+        <div class="error-toast" id="errorToast"></div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">图片预览</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-comparison">
+                    <div class="preview-item">
+                        <h4>原始图片</h4>
+                        <img id="originalPreview" alt="原始图片">
+                        <div class="preview-info" id="originalInfo"></div>
+                    </div>
+                    <div class="preview-item">
+                        <h4>压缩图片</h4>
+                        <img id="compressedPreview" alt="压缩图片">
+                        <div class="preview-info" id="compressedInfo"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

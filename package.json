@@ -1,0 +1,32 @@
+{
+  "name": "image-compressor",
+  "version": "1.0.0",
+  "description": "纯前端图片压缩工具，支持JPEG/PNG/WebP/AVIF格式批量压缩",
+  "main": "index.html",
+  "scripts": {
+    "build": "tsc && echo 'Build completed'",
+    "dev": "tsc --watch",
+    "serve": "npx http-server . -p 3000 -c-1"
+  },
+  "keywords": [
+    "image",
+    "compressor",
+    "frontend",
+    "canvas",
+    "webp",
+    "avif",
+    "batch-processing"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "stackblitz": {
+    "startCommand": "npm install && npm run build && npm run serve"
+  }
+}
