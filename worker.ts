@@ -63,14 +63,11 @@ async function compressImageInWorker(
             quality: settings.quality
         });
 
-        // 创建URL
-        const url = URL.createObjectURL(compressedBlob);
-
         // 清理 ImageBitmap
         imageBitmap.close();
 
         return {
-            url,
+            blob: compressedBlob,
             size: compressedBlob.size,
             dimensions: { width, height },
             format: outputFormat

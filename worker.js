@@ -34,10 +34,9 @@ async function compressImageInWorker(imageUrl, fileName, fileType, settings) {
             type: mimeType,
             quality: settings.quality
         });
-        const url = URL.createObjectURL(compressedBlob);
         imageBitmap.close();
         return {
-            url,
+            blob: compressedBlob,
             size: compressedBlob.size,
             dimensions: { width, height },
             format: outputFormat

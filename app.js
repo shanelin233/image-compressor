@@ -298,7 +298,8 @@ async function startCompression() {
             renderImagesGrid();
             showCurrentProcessingFile(imageFile);
             const compressedData = await compressImageWithWorker(imageFile, currentSettings);
-            imageFile.compressedUrl = compressedData.url;
+            imageFile.compressedUrl = URL.createObjectURL(compressedData.blob);
+            imageFile.compressedBlob = compressedData.blob;
             imageFile.compressedSize = compressedData.size;
             imageFile.compressedDimensions = compressedData.dimensions;
             imageFile.status = 'completed';
@@ -395,25 +396,23 @@ function showCompressionStats(imageFile) {
 }
 async function downloadImage(imageId) {
     const imageFile = imageFiles.find(img => img.id === imageId);
-    if (!imageFile || !imageFile.compressedUrl) {
+    if (!imageFile || !imageFile.compressedBlob) {
         showError('图片未找到或尚未压缩');
         return;
     }
     try {
-        const response = await fetch(imageFile.compressedUrl);
-        const blob = await response.blob();
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
+        link.href = URL.createObjectURL(imageFile.compressedBlob);
         link.download = getDownloadFileName(imageFile.file.name, currentSettings.outputFormat);
         link.click();
         URL.revokeObjectURL(link.href);
     }
     catch (error) {
-        showError('下载失败: ' + error);
+        showError('下载失败', error instanceof Error ? error.message : '未知错误');
     }
 }
 async function downloadAllImages() {
-    const completedImages = imageFiles.filter(img => img.status === 'completed' && img.compressedUrl);
+    const completedImages = imageFiles.filter(img => img.status === 'completed' && img.compressedBlob);
     if (completedImages.length === 0) {
         showError('没有可下载的图片');
         return;
@@ -424,7 +423,7 @@ async function downloadAllImages() {
     }
 }
 async function downloadZip() {
-    const completedImages = imageFiles.filter(img => img.status === 'completed' && img.compressedUrl);
+    const completedImages = imageFiles.filter(img => img.status === 'completed' && img.compressedBlob);
     if (completedImages.length === 0) {
         showError('没有可下载的图片');
         return;
@@ -432,10 +431,8 @@ async function downloadZip() {
     try {
         const zip = new window.JSZip();
         for (const imageFile of completedImages) {
-            const response = await fetch(imageFile.compressedUrl);
-            const blob = await response.blob();
             const fileName = getDownloadFileName(imageFile.file.name, currentSettings.outputFormat);
-            zip.file(fileName, blob);
+            zip.file(fileName, imageFile.compressedBlob);
         }
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const link = document.createElement('a');
