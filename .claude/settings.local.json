@@ -8,7 +8,15 @@
       "Bash(npm run build)",
       "Bash(npm run)",
       "Read(//d/AIcoding/**)",
-      "Read(//c/Users/Rong/.claude/**)"
+      "Read(//c/Users/Rong/.claude/**)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:shanelin233.github.io)"
     ],
     "deny": [],
     "ask": []
