@@ -39,7 +39,11 @@ function init() {
     updateQualityDisplay();
 }
 function setupEventListeners() {
-    elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+    elements.uploadArea.addEventListener('click', (e) => {
+        if (e.target !== elements.selectFilesBtn) {
+            elements.fileInput.click();
+        }
+    });
     elements.selectFilesBtn.addEventListener('click', () => elements.fileInput.click());
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.uploadArea.addEventListener('dragover', handleDragOver);

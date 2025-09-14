@@ -67,7 +67,11 @@ function init() {
 // 设置事件监听器
 function setupEventListeners() {
     // 文件上传
-    elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+    elements.uploadArea.addEventListener('click', (e) => {
+        if (e.target !== elements.selectFilesBtn) {
+            elements.fileInput.click();
+        }
+    });
     elements.selectFilesBtn.addEventListener('click', () => elements.fileInput.click());
     elements.fileInput.addEventListener('change', handleFileSelect);
 
