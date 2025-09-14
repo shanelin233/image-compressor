@@ -1,6 +1,29 @@
-# 纯前端图片压缩工具
+# 🖼️ 纯前端图片压缩工具 | Pure Frontend Image Compressor
 
-一个现代化的纯前端图片压缩工具，支持多种图片格式，提供批量处理、预览对比等功能。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+
+一个现代化的**纯前端**图片压缩工具，支持多种图片格式，提供批量处理、预览对比等功能。无需服务器，所有处理都在浏览器中完成，确保您的图片隐私安全。
+
+[🚀 **在线体验**](https://your-username.github.io/image-compressor) | [📖 **使用文档**](#使用方法) | [🛠️ **本地部署**](#快速开始)
+
+## 📸 界面预览
+
+### 步骤指导界面
+<div align="center">
+  <img src="docs/images/step-indicator.png" alt="步骤指导" width="600">
+</div>
+
+### 文件预览和管理
+<div align="center">
+  <img src="docs/images/file-preview.png" alt="文件预览" width="600">
+</div>
+
+### 压缩结果展示
+<div align="center">
+  <img src="docs/images/compression-result.png" alt="压缩结果" width="600">
+</div>
 
 ## ✨ 功能特性
 
@@ -114,31 +137,94 @@ npm run serve
 3. **内存使用**: 处理大图片时可能需要较多内存
 4. **浏览器兼容性**: 建议使用现代浏览器
 
+## 🛠️ 技术栈
+
+- **前端框架**: 原生 JavaScript + TypeScript
+- **图片处理**: Canvas API + OffscreenCanvas
+- **多线程**: Web Workers
+- **文件处理**: File API + Blob API
+- **打包下载**: JSZip
+- **样式**: CSS3 + CSS Variables
+- **构建工具**: TypeScript Compiler
+
+## 🏗️ 项目结构
+
+```
+image-compressor/
+├── index.html          # 主页面
+├── app.ts              # 主要逻辑 (TypeScript)
+├── app.js              # 编译后的 JavaScript
+├── worker.ts           # Web Worker (TypeScript)
+├── worker.js           # 编译后的 Worker JavaScript
+├── style.css           # 样式文件
+├── package.json        # 项目配置
+├── tsconfig.json       # TypeScript 配置
+├── single-file.html    # 单文件版本 (可选)
+└── README.md           # 项目说明
+```
+
 ## 🤝 贡献指南
 
-欢迎提交Issue和Pull Request来改进这个项目。
+欢迎提交 Issue 和 Pull Request 来改进这个项目！
 
-### 开发环境
-```bash
-# 安装开发依赖
-npm install
+### 开发环境设置
 
-# 编译TypeScript
-npm run build
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/your-username/image-compressor.git
+   cd image-compressor
+   ```
 
-# 监听文件变化
-npm run dev
-```
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **开发模式**
+   ```bash
+   # 编译 TypeScript
+   npm run build
+
+   # 监听文件变化 (开发模式)
+   npm run dev
+
+   # 启动本地服务器
+   npm run serve
+   ```
+
+### 提交规范
+
+- 🐛 `fix:` 修复 bug
+- ✨ `feat:` 新功能
+- 📝 `docs:` 文档更新
+- 💄 `style:` 样式调整
+- ♻️ `refactor:` 重构代码
+- ⚡ `perf:` 性能优化
 
 ## 📄 许可证
 
-MIT License - 详见 [LICENSE](LICENSE) 文件
+本项目采用 [MIT License](LICENSE) - 详见 LICENSE 文件
 
 ## 🙏 致谢
 
-- [JSZip](https://stuk.github.io/jszip/) - 用于ZIP文件生成
-- [StackBlitz](https://stackblitz.com/) - 在线开发环境
+- [JSZip](https://stuk.github.io/jszip/) - ZIP文件生成库
+- [TypeScript](https://www.typescriptlang.org/) - 类型安全的 JavaScript
+- [MDN Web Docs](https://developer.mozilla.org/) - Web API 文档参考
+
+## 🌟 支持项目
+
+如果这个项目对你有帮助，请考虑：
+
+- ⭐ 给项目点个 Star
+- 🐛 报告 Bug 或提出改进建议
+- 🔀 提交 Pull Request
+- 📢 分享给其他人
 
 ---
 
-⭐ 如果这个项目对你有帮助，请给个Star支持一下！
+<div align="center">
+  <p>用 ❤️ 制作 | Made with ❤️</p>
+  <p>
+    <a href="#top">回到顶部 ⬆️</a>
+  </p>
+</div>
